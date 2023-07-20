@@ -2,16 +2,17 @@ import React, { useEffect } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 
 const Chat = ({ route, navigation }) => {
-    const { name } = route.params;
+    const { name, selectedColor } = route.params;
 
     useEffect(() => {
         navigation.setOptions({ title: name });
     }, [name]);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Hello Chat!</Text>
-            <Text style={styles.chatText}>Welcome, {name}!</Text>
+        <View style={[styles.container, { backgroundColor: selectedColor }]}>
+            {/* Chat content */}
+            <Text style={styles.title}>Welcome to the Chat!</Text>
+            <Text style={styles.chatText}>Hello, {name}!</Text>
         </View>
     );
 }

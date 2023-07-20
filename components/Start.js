@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
 
-const Start = ({ navigation }) => {
-    const [name, setName] = useState('');
+// Array of color options that the user can choose from
+const colorOptions = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
 
+const Start = ({ navigation }) => {
+    // State variables to store the user's name and selected color
+    const [name, setName] = useState('');
+    const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
+
+    // Function to handle the "Start Chat" button press
     const handleStartChat = () => {
-        navigation.navigate('Chat', { name: name });
+        // Navigate to the "Chat" screen and pass the user's name and selected color as parameters
+        navigation.navigate('Chat', { name, selectedColor });
+    };
+
+    // Function to handle color selection when a color circle is pressed
+    const handleColorSelection = (color) => {
+        // Update the selectedColor state with the chosen color
+        setSelectedColor(color);
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Hello Start!</Text>
+            {/* Text input for the user to enter their name */}
             <TextInput
                 style={styles.textInput}
                 value={name}
@@ -18,6 +31,20 @@ const Start = ({ navigation }) => {
                 placeholder='Type your username here'
                 placeholderTextColor='#ccc'
             />
+            {/* Color picker displaying clickable circles for each color option */}
+            <View style={styles.colorPicker}>
+                {colorOptions.map((color) => (
+                    <TouchableOpacity
+                        key={color}
+                        style={[
+                            styles.colorCircle,
+                            { backgroundColor: color, borderColor: selectedColor === color ? 'black' : 'transparent' },
+                        ]}
+                        onPress={() => handleColorSelection(color)}
+                    />
+                ))}
+            </View>
+            {/* "Start Chat" button to initiate the chat */}
             <TouchableOpacity style={styles.startButton} onPress={handleStartChat}>
                 <Text style={styles.buttonText}>Start Chat</Text>
             </TouchableOpacity>
@@ -30,18 +57,28 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    title: {
-        fontSize: 24,
-        marginBottom: 20,
+        padding: 20,
     },
     textInput: {
-        width: 250,
+        width: '100%',
         height: 40,
         backgroundColor: '#fff',
         paddingHorizontal: 10,
         marginBottom: 10,
         borderRadius: 5,
+    },
+    colorPicker: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    colorCircle: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        margin: 5,
+        borderWidth: 2,
     },
     startButton: {
         backgroundColor: 'blue',
