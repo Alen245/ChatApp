@@ -45,12 +45,15 @@ const Start = ({ navigation }) => {
                 ))}
             </View>
             {/* "Start Chat" button to initiate the chat */}
-            <TouchableOpacity style={styles.startButton} onPress={handleStartChat}>
+            <TouchableOpacity
+                style={[styles.startButton, { backgroundColor: selectedColor }]} // Use selectedColor for button background
+                onPress={handleStartChat}
+            >
                 <Text style={styles.buttonText}>Start Chat</Text>
             </TouchableOpacity>
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -81,7 +84,6 @@ const styles = StyleSheet.create({
         borderWidth: 2,
     },
     startButton: {
-        backgroundColor: 'blue',
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
