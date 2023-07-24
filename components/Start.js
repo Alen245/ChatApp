@@ -1,10 +1,14 @@
+// Import necessary components and functions from 'react-native'
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { getAuth, signInAnonymously } from "firebase/auth";
 
 // Array of color options that the user can choose from
 const colorOptions = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
 
+// Start component function
 const Start = ({ navigation }) => {
+    const auth = getAuth();
     // State variables to store the user's name and selected color
     const [name, setName] = useState('');
     const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
@@ -19,6 +23,23 @@ const Start = ({ navigation }) => {
     const handleColorSelection = (color) => {
         // Update the selectedColor state with the chosen color
         setSelectedColor(color);
+    };
+
+    // Function to sign in the user anonymously
+    const signInUser = () => {
+        signInAnonymously(auth)
+            .then((result) => {
+                // Navigate to the Chat screen with user ID, name, and color
+                navigation.navigate("Chat", {
+                    uid: result.user.uid,
+                    name: name,
+                    color: selectedColor ? selectedColor : "white",
+                });
+                Alert.alert("Signed in successfully!");
+            })
+            .catch((error) => {
+                Alert.alert("Unable to sign in, try again later.");
+            });
     };
 
     return (
@@ -55,6 +76,7 @@ const Start = ({ navigation }) => {
     );
 };
 
+// Styles for the component using StyleSheet.create
 const styles = StyleSheet.create({
     container: {
         flex: 1,
