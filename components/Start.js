@@ -1,6 +1,6 @@
-// Import necessary components and functions from 'react-native'
+
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { getAuth, signInAnonymously } from "firebase/auth";
 
 // Array of color options that the user can choose from
@@ -13,12 +13,6 @@ const Start = ({ navigation }) => {
     const [name, setName] = useState('');
     const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
 
-    // Function to handle the "Start Chat" button press
-    const handleStartChat = () => {
-        // Navigate to the "Chat" screen and pass the user's name and selected color as parameters
-        navigation.navigate('Chat', { name, selectedColor });
-    };
-
     // Function to handle color selection when a color circle is pressed
     const handleColorSelection = (color) => {
         // Update the selectedColor state with the chosen color
@@ -30,14 +24,15 @@ const Start = ({ navigation }) => {
         signInAnonymously(auth)
             .then((result) => {
                 // Navigate to the Chat screen with user ID, name, and color
-                navigation.navigate("Chat", {
+                navigation.replace("Chat", {
                     uid: result.user.uid,
                     name: name,
-                    color: selectedColor ? selectedColor : "white",
+                    selectedColor: selectedColor ? selectedColor : "white",
                 });
                 Alert.alert("Signed in successfully!");
             })
             .catch((error) => {
+                console.log("Error signing in:", error); // Log the error details
                 Alert.alert("Unable to sign in, try again later.");
             });
     };
@@ -68,7 +63,7 @@ const Start = ({ navigation }) => {
             {/* "Start Chat" button to initiate the chat */}
             <TouchableOpacity
                 style={[styles.startButton, { backgroundColor: selectedColor }]} // Use selectedColor for button background
-                onPress={handleStartChat}
+                onPress={signInUser} // Call signInUser function instead of navigating directly
             >
                 <Text style={styles.buttonText}>Start Chat</Text>
             </TouchableOpacity>

@@ -1,54 +1,55 @@
-// export default Chat;
+// Chat.js
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Alert } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
-const Chat = ({ route, navigation }) => {
-    const { name, selectedColor } = route.params;
+const Chat = ({ route, navigation, database }) => {
+    const { name, selectedColor, uid } = route.params;
     const [messages, setMessages] = useState([]);
-
-    const onSend = (newMessages) => {
-        setMessages((previousMessages) => GiftedChat.append(previousMessages, newMessages));
-    };
-
-    useEffect(() => {
-        navigation.setOptions({ title: name })
-        setMessages([
-            {
-                _id: 1,
-                text: 'Hello developer',
-                createdAt: new Date(),
-                user: {
-                    _id: 2,
-                    name: 'React Native',
-                    avatar: 'https://placeimg.com/140/140/any',
-                },
-            },
-            {
-                _id: 2,
-                text: 'This is a system message',
-                createdAt: new Date(),
-                system: true,
-            },
-        ]);
-
-    }, []);
 
     useEffect(() => {
         navigation.setOptions({ title: name });
-    }, []);
 
-    // Custom renderBubble function to customize speech bubble colors
+        const messagesRef = collection(database, 'messages');
+        const q = query(messagesRef, orderBy('createdAt', 'desc'));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const messageList = [];
+            snapshot.forEach((doc) => {
+                const message = doc.data();
+                // Convert the Firestore Timestamp to a Date object
+                message.createdAt = message.createdAt.toDate();
+                messageList.push(message);
+            });
+            setMessages(messageList);
+        });
+
+        return () => {
+            unsubscribe(); // Stop listening for updates and clean up the listener when the component is unmounted
+        };
+    }, [database, name, navigation]);
+
+    const onSend = (newMessages) => {
+        addDoc(collection(database, 'messages'), newMessages[0])
+            .then(() => {
+                console.log('Message sent successfully!');
+            })
+            .catch((error) => {
+                console.log('Error sending message:', error);
+            });
+    };
+
     const renderBubble = (props) => {
         return (
             <Bubble
                 {...props}
                 wrapperStyle={{
                     right: {
-                        backgroundColor: '#000', // Black color for the sender
+                        backgroundColor: '#000',
                     },
                     left: {
-                        backgroundColor: '#FFF', // White color for the receiver
+                        backgroundColor: '#FFF',
                     },
                 }}
             />
@@ -57,18 +58,16 @@ const Chat = ({ route, navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: selectedColor }]}>
-            {/* Gifted Chat component */}
             <GiftedChat
                 messages={messages}
-                renderBubble={renderBubble} // Apply the custom renderBubble function
-                onSend={messages => onSend(messages)}
+                renderBubble={renderBubble}
+                onSend={(newMessages) => onSend(newMessages)}
                 user={{
-                    _id: 1,
+                    _id: uid, // Use the user ID passed from the Start screen
+                    name: name, // Use the user name passed from the Start screen
                 }}
             />
-            {/* KeyboardAvoidingView for Android */}
             {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
-            {/* Action Button */}
             <TouchableOpacity
                 accessible={true}
                 accessibilityLabel="More options"

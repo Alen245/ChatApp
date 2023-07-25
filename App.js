@@ -1,4 +1,4 @@
-// Import necessary components and functions
+// App.js
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -13,6 +13,7 @@ import { getFirestore } from "firebase/firestore";
 
 // Create a stack navigator for navigation within the app
 const Stack = createNativeStackNavigator();
+
 const App = () => {
   // Firebase configuration containing necessary information to initialize Firebase app
   const firebaseConfig = {
@@ -31,7 +32,6 @@ const App = () => {
   // Get Firestore database object using the initialized Firebase app
   const db = getFirestore(app);
 
-
   // Component rendering and navigation setup
   return (
     // Wrap the entire app with NavigationContainer for navigation functionality
@@ -48,12 +48,19 @@ const App = () => {
         {/* Also passing the Firestore database object as an initial parameter to Chat */}
         <Stack.Screen
           name="Chat"
-          component={Chat}
           options={({ route }) => ({ title: route.params.name })}
-          initialParams={{ database: db }} // Pass the database object as initial parameter
-        />
+        >
+          {(props) => <Chat {...props} database={db} />}
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-export default App;;
+
+export default App;
+
+
+
+
+
+
