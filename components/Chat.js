@@ -1,6 +1,5 @@
-// Chat.js
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text, Alert } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -8,8 +7,20 @@ const Chat = ({ route, navigation, database }) => {
     const { name, selectedColor, uid } = route.params;
     const [messages, setMessages] = useState([]);
 
+    // Function to handle the back button press and navigate back to the Start screen
+    const handleBackButton = () => {
+        navigation.navigate('Start');
+    };
+
     useEffect(() => {
-        navigation.setOptions({ title: name });
+        navigation.setOptions({
+            title: name,
+            headerLeft: () => (
+                <TouchableOpacity style={styles.backButton} onPress={handleBackButton}>
+                    <Text style={styles.backButtonText}>Back</Text>
+                </TouchableOpacity>
+            ),
+        });
 
         const messagesRef = collection(database, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'desc'));
@@ -89,6 +100,14 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         // Your action button styles
+    },
+    backButton: {
+        marginLeft: 16,
+        padding: 8,
+    },
+    backButtonText: {
+        fontSize: 16,
+        color: '#007AFF',
     },
 });
 
