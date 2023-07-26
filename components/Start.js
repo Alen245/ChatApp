@@ -1,29 +1,21 @@
-
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { getAuth, signInAnonymously } from "firebase/auth";
 
-// Array of color options that the user can choose from
 const colorOptions = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
 
-// Start component function
 const Start = ({ navigation }) => {
     const auth = getAuth();
-    // State variables to store the user's name and selected color
     const [name, setName] = useState('');
     const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
 
-    // Function to handle color selection when a color circle is pressed
     const handleColorSelection = (color) => {
-        // Update the selectedColor state with the chosen color
         setSelectedColor(color);
     };
 
-    // Function to sign in the user anonymously
     const signInUser = () => {
         signInAnonymously(auth)
             .then((result) => {
-                // Navigate to the Chat screen with user ID, name, and color
                 navigation.replace("Chat", {
                     uid: result.user.uid,
                     name: name,
@@ -32,14 +24,13 @@ const Start = ({ navigation }) => {
                 Alert.alert("Signed in successfully!");
             })
             .catch((error) => {
-                console.log("Error signing in:", error); // Log the error details
+                console.log("Error signing in:", error);
                 Alert.alert("Unable to sign in, try again later.");
             });
     };
 
     return (
         <View style={styles.container}>
-            {/* Text input for the user to enter their name */}
             <TextInput
                 style={styles.textInput}
                 value={name}
@@ -47,7 +38,6 @@ const Start = ({ navigation }) => {
                 placeholder='Type your username here'
                 placeholderTextColor='#ccc'
             />
-            {/* Color picker displaying clickable circles for each color option */}
             <View style={styles.colorPicker}>
                 {colorOptions.map((color) => (
                     <TouchableOpacity
@@ -60,10 +50,9 @@ const Start = ({ navigation }) => {
                     />
                 ))}
             </View>
-            {/* "Start Chat" button to initiate the chat */}
             <TouchableOpacity
-                style={[styles.startButton, { backgroundColor: selectedColor }]} // Use selectedColor for button background
-                onPress={signInUser} // Call signInUser function instead of navigating directly
+                style={[styles.startButton, { backgroundColor: selectedColor }]}
+                onPress={signInUser}
             >
                 <Text style={styles.buttonText}>Start Chat</Text>
             </TouchableOpacity>
@@ -71,7 +60,6 @@ const Start = ({ navigation }) => {
     );
 };
 
-// Styles for the component using StyleSheet.create
 const styles = StyleSheet.create({
     container: {
         flex: 1,

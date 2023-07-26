@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text, Alert } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Chat = ({ route, navigation, database }) => {
+const Chat = ({ route, navigation, db, isConnected }) => {
     const { name, selectedColor, uid } = route.params;
     const [messages, setMessages] = useState([]);
-
-    // Function to handle the back button press and navigate back to the Start screen
-    const handleBackButton = () => {
-        navigation.navigate('Start');
-    };
+    const [cachedMessages, setCachedMessages] = useState([]);
 
     useEffect(() => {
         navigation.setOptions({
@@ -22,27 +19,56 @@ const Chat = ({ route, navigation, database }) => {
             ),
         });
 
-        const messagesRef = collection(database, 'messages');
+        const messagesRef = collection(db, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'desc'));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const messageList = [];
-            snapshot.forEach((doc) => {
-                const message = doc.data();
-                // Convert the Firestore Timestamp to a Date object
-                message.createdAt = message.createdAt.toDate();
-                messageList.push(message);
+        if (isConnected) {
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const messageList = [];
+                snapshot.forEach((doc) => {
+                    const message = doc.data();
+                    // Convert the Firestore Timestamp to a Date object
+                    message.createdAt = message.createdAt.toDate();
+                    messageList.push(message);
+                });
+                setMessages(messageList);
+                cacheMessages(messageList);
             });
-            setMessages(messageList);
-        });
 
-        return () => {
-            unsubscribe(); // Stop listening for updates and clean up the listener when the component is unmounted
-        };
-    }, [database, name, navigation]);
+            return () => {
+                unsubscribe(); // Stop listening for updates and clean up the listener when the component is unmounted
+            };
+        } else {
+            loadCachedMessages();
+        }
+    }, [db, isConnected, name, navigation]);
+
+    const cacheMessages = async (messageList) => {
+        try {
+            await AsyncStorage.setItem('cachedMessages', JSON.stringify(messageList));
+        } catch (error) {
+            console.log('Error caching messages:', error);
+        }
+    };
+
+    const loadCachedMessages = async () => {
+        try {
+            const cachedMessages = await AsyncStorage.getItem('cachedMessages');
+            if (cachedMessages !== null) {
+                setCachedMessages(JSON.parse(cachedMessages));
+            }
+        } catch (error) {
+            console.log('Error loading cached messages:', error);
+        }
+    };
+
+    // Function to handle the back button press and navigate back to the Start screen
+    const handleBackButton = () => {
+        navigation.navigate('Start');
+    };
 
     const onSend = (newMessages) => {
-        addDoc(collection(database, 'messages'), newMessages[0])
+        addDoc(collection(db, 'messages'), newMessages[0])
             .then(() => {
                 console.log('Message sent successfully!');
             })
@@ -70,7 +96,7 @@ const Chat = ({ route, navigation, database }) => {
     return (
         <View style={[styles.container, { backgroundColor: selectedColor }]}>
             <GiftedChat
-                messages={messages}
+                messages={isConnected ? messages : cachedMessages}
                 renderBubble={renderBubble}
                 onSend={(newMessages) => onSend(newMessages)}
                 user={{
