@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text, Alert } from 'react-native';
-import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat'; // Import InputToolbar from the "react-native-gifted-chat" package
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -93,11 +93,18 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         );
     };
 
+    // Function to render the InputToolbar based on the connection status
+    const renderInputToolbar = (props) => {
+        if (isConnected) return <InputToolbar {...props} />;
+        else return null;
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: selectedColor }]}>
             <GiftedChat
                 messages={isConnected ? messages : cachedMessages}
                 renderBubble={renderBubble}
+                renderInputToolbar={renderInputToolbar} // Use the custom renderInputToolbar function
                 onSend={(newMessages) => onSend(newMessages)}
                 user={{
                     _id: uid, // Use the user ID passed from the Start screen
