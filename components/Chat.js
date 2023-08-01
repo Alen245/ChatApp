@@ -1,3 +1,4 @@
+// Chat.js
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text, Alert } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
@@ -17,30 +18,32 @@ const Chat = ({ route, navigation, db, isConnected }) => {
                     <Text style={styles.backButtonText}>Back</Text>
                 </TouchableOpacity>
             ),
+            headerRight: () => !isConnected && <Text style={styles.offlineText}>Offline</Text>,
         });
+
+        if (!isConnected) {
+            loadCachedMessages();
+            return;
+        }
 
         const messagesRef = collection(db, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'desc'));
 
-        if (isConnected) {
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const messageList = [];
-                snapshot.forEach((doc) => {
-                    const message = doc.data();
-                    // Convert the Firestore Timestamp to a Date object
-                    message.createdAt = message.createdAt.toDate();
-                    messageList.push(message);
-                });
-                setMessages(messageList);
-                cacheMessages(messageList);
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const messageList = [];
+            snapshot.forEach((doc) => {
+                const message = doc.data();
+                // Convert the Firestore Timestamp to a Date object
+                message.createdAt = message.createdAt.toDate();
+                messageList.push(message);
             });
+            setMessages(messageList);
+            cacheMessages(messageList);
+        });
 
-            return () => {
-                unsubscribe(); // Stop listening for updates and clean up the listener when the component is unmounted
-            };
-        } else {
-            loadCachedMessages();
-        }
+        return () => {
+            unsubscribe(); // Stop listening for updates and clean up the listener when the component is unmounted
+        };
     }, [db, isConnected, name, navigation]);
 
     const cacheMessages = async (messageList) => {
@@ -95,8 +98,8 @@ const Chat = ({ route, navigation, db, isConnected }) => {
 
     // Function to render the InputToolbar based on the connection status
     const renderInputToolbar = (props) => {
-        if (isConnected) return <InputToolbar {...props} />;
-        else return null;
+        if (!isConnected) return;
+        return <InputToolbar {...props} />;
     };
 
     return (
@@ -141,6 +144,14 @@ const styles = StyleSheet.create({
     backButtonText: {
         fontSize: 16,
         color: '#007AFF',
+    },
+    offlineText: {
+        color: 'red',
+        fontWeight: 'bold',
+        position: 'absolute',
+        top: 0,
+        right: 16,
+        zIndex: 1,
     },
 });
 
