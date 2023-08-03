@@ -7,11 +7,16 @@ import CustomActions from './CustomActions';
 import MapView from 'react-native-maps';
 
 const Chat = ({ route, navigation, db, isConnected }) => {
+    // Destructure parameters from the navigation route
     const { name, selectedColor, uid } = route.params;
+
+    // Set up state for chat messages and cached messages
     const [messages, setMessages] = useState([]);
     const [cachedMessages, setCachedMessages] = useState([]);
 
+    // Set up useEffect to subscribe to messages when the component mounts
     useEffect(() => {
+        // Configure navigation header options (Back button and Offline status)
         navigation.setOptions({
             title: name,
             headerLeft: () => (
@@ -22,14 +27,17 @@ const Chat = ({ route, navigation, db, isConnected }) => {
             headerRight: () => !isConnected && <Text style={styles.offlineText}>Offline</Text>,
         });
 
+        // If not connected to the internet, load cached messages and return
         if (!isConnected) {
             loadCachedMessages();
             return;
         }
 
+        // Set up Firestore query to listen for new messages
         const messagesRef = collection(db, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'desc'));
 
+        // Subscribe to the query using onSnapshot, and update state with new messages
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const messageList = [];
             snapshot.forEach((doc) => {
@@ -41,11 +49,13 @@ const Chat = ({ route, navigation, db, isConnected }) => {
             cacheMessages(messageList);
         });
 
+        // Unsubscribe from the query when the component unmounts
         return () => {
             unsubscribe();
         };
     }, [db, isConnected, name, navigation]);
 
+    // Function to cache messages using AsyncStorage
     const cacheMessages = async (messageList) => {
         try {
             await AsyncStorage.setItem('cachedMessages', JSON.stringify(messageList));
@@ -54,6 +64,7 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         }
     };
 
+    // Function to load cached messages from AsyncStorage
     const loadCachedMessages = async () => {
         try {
             const cachedMessages = await AsyncStorage.getItem('cachedMessages');
@@ -65,12 +76,15 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         }
     };
 
+    // Function to handle the Back button press and navigate to the Start screen
     const handleBackButton = () => {
         navigation.navigate('Start');
     };
 
+    // Function to handle sending a new message
     const onSend = (newMessages = []) => {
         if (newMessages.length > 0) {
+            // Add the new message to Firestore
             addDoc(collection(db, 'messages'), newMessages[0])
                 .then(() => {
                     console.log('Message sent successfully!');
@@ -81,31 +95,35 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         }
     };
 
+    // Function to customize the appearance of the chat bubbles
     const renderBubble = (props) => {
         return (
             <Bubble
                 {...props}
                 wrapperStyle={{
                     right: {
-                        backgroundColor: '#000',
+                        backgroundColor: '#000', // Background color for the sender's messages
                     },
                     left: {
-                        backgroundColor: '#FFF',
+                        backgroundColor: '#FFF', // Background color for other participants' messages
                     },
                 }}
             />
         );
     };
 
+    // Function to customize the appearance of the input toolbar
     const renderInputToolbar = (props) => {
-        if (!isConnected) return;
+        if (!isConnected) return; // Hide the input toolbar when offline
         return <InputToolbar {...props} />;
     };
 
+    // Function to render custom actions (e.g., send location, pick image) in the input toolbar
     const renderCustomActions = (props) => {
         return <CustomActions {...props} onSend={onSend} />;
     };
 
+    // Function to render the MapView when a message contains location data
     const renderCustomView = (props) => {
         const { currentMessage } = props;
         if (currentMessage.location) {
@@ -124,10 +142,11 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         return null;
     };
 
+    // Return the GiftedChat component with the customizations
     return (
         <View style={[styles.container, { backgroundColor: selectedColor }]}>
             <GiftedChat
-                messages={isConnected ? messages : cachedMessages}
+                messages={isConnected ? messages : cachedMessages} // Display connected messages or cached messages when offline
                 renderBubble={renderBubble}
                 renderInputToolbar={renderInputToolbar}
                 onSend={(newMessages) => onSend(newMessages)}
@@ -136,7 +155,7 @@ const Chat = ({ route, navigation, db, isConnected }) => {
                     name: name,
                 }}
                 renderActions={renderCustomActions}
-                renderCustomView={renderCustomView} // Add the renderCustomView prop
+                renderCustomView={renderCustomView} // Add the renderCustomView prop to display the MapView for location messages
             />
             {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
         </View>
