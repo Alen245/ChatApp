@@ -1,65 +1,51 @@
-// Import required modules and components
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text, Alert } from 'react-native';
+import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
-// Define the Chat component function that takes route, navigation, db, and isConnected as props
 const Chat = ({ route, navigation, db, isConnected }) => {
-    // Destructure properties from the route.params object
     const { name, selectedColor, uid } = route.params;
-
-    // Define state variables for maintaining messages and cached messages
     const [messages, setMessages] = useState([]);
     const [cachedMessages, setCachedMessages] = useState([]);
 
-    // useEffect hook is used to manage side effects (e.g., fetching data) and update component state
     useEffect(() => {
-        // Update the header options for this screen
         navigation.setOptions({
             title: name,
             headerLeft: () => (
-                // Render a custom "Back" button in the header that navigates to the Start screen
                 <TouchableOpacity style={styles.backButton} onPress={handleBackButton}>
                     <Text style={styles.backButtonText}>Back</Text>
                 </TouchableOpacity>
             ),
             headerRight: () => !isConnected && <Text style={styles.offlineText}>Offline</Text>,
-            // Show "Offline" text in the header if the user is not connected to the internet
         });
 
-        // If the user is offline, load the cached messages and return
         if (!isConnected) {
             loadCachedMessages();
             return;
         }
 
-        // Create a Firestore reference to the 'messages' collection and order messages by creation date
         const messagesRef = collection(db, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'desc'));
 
-        // Set up a listener to receive real-time updates from the 'messages' collection
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const messageList = [];
             snapshot.forEach((doc) => {
                 const message = doc.data();
-                // Convert the Firestore Timestamp to a Date object for each message
                 message.createdAt = message.createdAt.toDate();
                 messageList.push(message);
             });
-            // Update the state with the latest messages and cache them
             setMessages(messageList);
             cacheMessages(messageList);
         });
 
-        // Clean up the listener when the component is unmounted to avoid memory leaks
         return () => {
             unsubscribe();
         };
     }, [db, isConnected, name, navigation]);
 
-    // Function to cache the messages in AsyncStorage
     const cacheMessages = async (messageList) => {
         try {
             await AsyncStorage.setItem('cachedMessages', JSON.stringify(messageList));
@@ -68,7 +54,6 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         }
     };
 
-    // Function to load cached messages from AsyncStorage
     const loadCachedMessages = async () => {
         try {
             const cachedMessages = await AsyncStorage.getItem('cachedMessages');
@@ -80,23 +65,22 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         }
     };
 
-    // Function to handle the back button press and navigate back to the Start screen
     const handleBackButton = () => {
         navigation.navigate('Start');
     };
 
-    // Function to send a new message to the Firestore database
-    const onSend = (newMessages) => {
-        addDoc(collection(db, 'messages'), newMessages[0])
-            .then(() => {
-                console.log('Message sent successfully!');
-            })
-            .catch((error) => {
-                console.log('Error sending message:', error);
-            });
+    const onSend = (newMessages = []) => {
+        if (newMessages.length > 0) {
+            addDoc(collection(db, 'messages'), newMessages[0])
+                .then(() => {
+                    console.log('Message sent successfully!');
+                })
+                .catch((error) => {
+                    console.log('Error sending message:', error);
+                });
+        }
     };
 
-    // Function to customize the appearance of message bubbles
     const renderBubble = (props) => {
         return (
             <Bubble
@@ -113,50 +97,55 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         );
     };
 
-    // Function to render the input toolbar based on the connection status
     const renderInputToolbar = (props) => {
-        if (!isConnected) return; // If offline, hide the input toolbar
+        if (!isConnected) return;
         return <InputToolbar {...props} />;
     };
 
-    // Return the JSX representing the Chat component
+    const renderCustomActions = (props) => {
+        return <CustomActions {...props} onSend={onSend} />;
+    };
+
+    const renderCustomView = (props) => {
+        const { currentMessage } = props;
+        if (currentMessage.location) {
+            return (
+                <MapView
+                    style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+                    region={{
+                        latitude: currentMessage.location.latitude,
+                        longitude: currentMessage.location.longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                />
+            );
+        }
+        return null;
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: selectedColor }]}>
-            {/* Render the GiftedChat component */}
             <GiftedChat
-                messages={isConnected ? messages : cachedMessages} // Show real-time messages if connected, otherwise show cached messages
-                renderBubble={renderBubble} // Use the custom renderBubble function for message bubbles
-                renderInputToolbar={renderInputToolbar} // Use the custom renderInputToolbar function
-                onSend={(newMessages) => onSend(newMessages)} // Call onSend function when a new message is sent
+                messages={isConnected ? messages : cachedMessages}
+                renderBubble={renderBubble}
+                renderInputToolbar={renderInputToolbar}
+                onSend={(newMessages) => onSend(newMessages)}
                 user={{
-                    _id: uid, // Use the user ID passed from the Start screen
-                    name: name, // Use the user name passed from the Start screen
+                    _id: uid,
+                    name: name,
                 }}
+                renderActions={renderCustomActions}
+                renderCustomView={renderCustomView} // Add the renderCustomView prop
             />
             {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
-            {/* Render an action button */}
-            <TouchableOpacity
-                accessible={true}
-                accessibilityLabel="More options"
-                accessibilityHint="Lets you choose to send an image or your geolocation."
-                accessibilityRole="button"
-                onPress={() => console.log('Action button pressed!')}
-            >
-                <View style={styles.actionButton}>
-                    {/* Your action button content */}
-                </View>
-            </TouchableOpacity>
         </View>
     );
 };
 
-// Define the component styles using StyleSheet
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    actionButton: {
-        // Your action button styles
     },
     backButton: {
         marginLeft: 16,
@@ -176,5 +165,4 @@ const styles = StyleSheet.create({
     },
 });
 
-// Export the Chat component as the default export
 export default Chat;
