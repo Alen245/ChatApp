@@ -5,6 +5,8 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomActions from './CustomActions';
 import MapView from 'react-native-maps';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 
 const Chat = ({ route, navigation, db, isConnected }) => {
     // Destructure parameters from the navigation route
@@ -114,13 +116,21 @@ const Chat = ({ route, navigation, db, isConnected }) => {
 
     // Function to customize the appearance of the input toolbar
     const renderInputToolbar = (props) => {
-        if (!isConnected) return; // Hide the input toolbar when offline
-        return <InputToolbar {...props} />;
+        return (
+            <InputToolbar {...props} />
+        );
+    };
+
+    // Function to handle the action press (e.g., send location, pick image)
+    const onActionPress = () => {
+        // Implement your logic for handling actions here
+        // For example, you can open a modal or perform other actions based on the user's choice.
+        console.log('Action pressed!');
     };
 
     // Function to render custom actions (e.g., send location, pick image) in the input toolbar
     const renderCustomActions = (props) => {
-        return <CustomActions {...props} onSend={onSend} />;
+        return <CustomActions {...props} onActionPress={onActionPress} user={{ _id: uid, name }} />;
     };
 
     // Function to render the MapView when a message contains location data

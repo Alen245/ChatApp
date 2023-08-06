@@ -7,7 +7,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 const CustomActions = ({ onSend, user }) => {
     const actionSheet = useActionSheet();
 
-    const onActionPress = () => {
+    const handleActionPress = () => {
         const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
         const cancelButtonIndex = options.length - 1;
         actionSheet.showActionSheetWithOptions(
@@ -31,6 +31,7 @@ const CustomActions = ({ onSend, user }) => {
             }
         );
     };
+
 
     const pickImage = async () => {
         let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -106,7 +107,7 @@ const CustomActions = ({ onSend, user }) => {
     };
 
     return (
-        <TouchableOpacity style={styles.container} onPress={onActionPress}>
+        <TouchableOpacity style={styles.container} onPress={handleActionPress}>
             <View style={[styles.wrapper]}>
                 <Text style={[styles.iconText]}>+</Text>
             </View>
